@@ -1,41 +1,46 @@
-const clientId = "0bc687de481e4c8c916b14ea78f5dc90"; // my client ID
-import {redirectToAuthCodeFlow, getAccessToken, savedAccessToken} from './auth'
-let code, params, albums, data;
+import {redirectToAuthCodeFlow, getAccessToken, isTokenValid, clientId} from './auth'
+let authCode, params, albums, data;
 
+console.log(`clientId = `, clientId)
+
+const savedAccessToken = localStorage.getItem("access_token");
+const verifierCode = localStorage.getItem("verifier");
+
+console.log(`savedAccessToken = `, savedAccessToken)
+
+if (!isTokenValid() || !verifierCode) {
+    redirectToAuthCodeFlow(clientId)
+}
+   
 // creates a new URLSearchParams object 
 // that provides methods to parse, access, and manipulate query parameters
 const queryString = window.location.search;
-console.log(`queryString = `, queryString)
-
 params = new URLSearchParams(queryString);
-console.log(`params = `, params)
 
-// Access code query parameter
-code = params.get("code");
-console.log(`code = `, code)
+// get code from query parameter to get the access token
+authCode = params.get("code")
 
-if (!savedAccessToken) {
-    if (!code) {
-        redirectToAuthCodeFlow(clientId);
-    } else {
-        const accessToken = await getAccessToken(clientId, code);
-        data = await fetchNewReleases(accessToken);
-    }
-} else {
-    data = await fetchNewReleases(savedAccessToken);
+// get the access token
+if (!savedAccessToken || savedAccessToken === "undefined") {
+    getAccessToken(clientId, authCode)
 }
+
+data = await fetchNewReleases(savedAccessToken);
+
+
 albums = render(data);
-document.querySelector('#content').innerHTML = `<div class="grid">${albums}</div>`;
+document.querySelector('#content').innerHTML = `<div class="subtitle">Click on a card for details</div><div class="grid">${albums}</div>`;
 
 async function fetchNewReleases(accessToken) {
     const result = await fetch("https://api.spotify.com/v1/browse/new-releases", {
-        method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+        method: "GET", headers: { Authorization: `Bearer ${accessToken}`}, credentials: 'omit' 
     });
 
     const data = await result.json();
     return data.albums; // Assuming the data is nested under "albums"
 
 }
+
 function render(albums) {
     return albums?.items?.map((item) => `
     <div class="card">

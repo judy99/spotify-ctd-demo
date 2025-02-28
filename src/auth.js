@@ -1,7 +1,9 @@
+export const clientId = "0bc687de481e4c8c916b14ea78f5dc90";
 export const savedAccessToken = localStorage.getItem("access_token");
 
 // redirect the user to the Spotify authorization page
 export async function redirectToAuthCodeFlow(clientId) {
+    console.log(`redirectToAuthCodeFlow.......= `, )
     const verifier = generateCodeVerifier(128);
     // Convert digest to Base64 URL-safe string
     // Necessary for web-safe cryptographic data (e.g., OAuth PKCE)
@@ -20,6 +22,7 @@ export async function redirectToAuthCodeFlow(clientId) {
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
 
+    // Request User Authorization
     document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
@@ -69,13 +72,32 @@ export async function getAccessToken(clientId, code) {
     // The API uses code and verifier to verify our request and it returns an access token
     const result = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params
+        headers: { "Content-Type": "application/x-www-form-urlencoded"},
+        body: params,
+        mode: 'cors'
     });
 
-    const { access_token } = await result.json();
-    console.log(`access_token:::: = `, access_token)
+    // expires_in - in seconds, 1 hour by default
+    const { access_token, expires_in } = await result.json();
+
+    const expirationTime = Date.now() + expires_in * 1000; 
+
     localStorage.setItem("access_token", access_token);
+    localStorage.setItem("access_token_expiry", expirationTime.toString());
 
     return access_token;
+}
+
+export function isTokenValid() {
+    const token = localStorage.getItem("access_token");
+    const expiry = localStorage.getItem("access_token_expiry");
+
+    console.log(`token===== = `, token)
+
+    if (!token || token == "undefined" || expiry == "NaN" || !expiry || Number(Date.now()) > Number(expiry)) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("access_token_expiry");
+        return false;
+    }
+    return true;
 }
