@@ -1,12 +1,8 @@
 import {redirectToAuthCodeFlow, getAccessToken, isTokenValid, clientId} from './auth'
 let authCode, params, albums, data;
 
-console.log(`clientId = `, clientId)
-
 const savedAccessToken = localStorage.getItem("access_token");
 const verifierCode = localStorage.getItem("verifier");
-
-console.log(`savedAccessToken = `, savedAccessToken)
 
 if (!isTokenValid() || !verifierCode) {
     redirectToAuthCodeFlow(clientId)
@@ -27,18 +23,39 @@ if (!savedAccessToken || savedAccessToken === "undefined") {
 
 data = await fetchNewReleases(savedAccessToken);
 
-
-albums = render(data);
-document.querySelector('#content').innerHTML = `<div class="subtitle">Click on a card for details</div><div class="grid">${albums}</div>`;
+if (!data.error) {
+    albums = render(data);
+    document.querySelector('#content').innerHTML = `<div class="subtitle">Click on a card for details</div><div class="grid">${albums}</div>`;
+} else {
+    document.querySelector('#content').innerHTML = `<div class="subtitle">Ooops! Something went wrong...</div>`;
+}
 
 async function fetchNewReleases(accessToken) {
-    const result = await fetch("https://api.spotify.com/v1/browse/new-releases", {
-        method: "GET", headers: { Authorization: `Bearer ${accessToken}`}, credentials: 'omit' 
-    });
-
-    const data = await result.json();
-    return data.albums; // Assuming the data is nested under "albums"
-
+    try {
+        const result = await fetch("https://api.spotify.com/v1/browse/new-releases", {
+            method: "GET", headers: { Authorization: `Bearer ${accessToken}`}, credentials: 'omit' 
+        });
+    
+        if (!result.ok) {
+            switch (result.status) {
+                case 400:
+                    throw new Error("Bad Request: The request was invalid or cannot be served.");
+                case 401:
+                    throw new Error("Unauthorized: Invalid or expired access token.");
+                case 404:
+                    throw new Error("Not Found: The requested resorce do not exist.");
+                case 500:
+                    throw new Error("Server Error: Spotify API is currently unavailable.");
+                default:
+                    throw new Error(`Unexpected error: ${result.statusText} (${result.status})`);
+            }
+        }    
+        const data = await result.json();
+        return data.albums; // Assuming the data is nested under "albums"
+    } catch (error) {
+        console.error("Error fetching new albums list...\n", error.message);
+        return { error: error.message };
+    }
 }
 
 function render(albums) {

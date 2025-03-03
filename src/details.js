@@ -15,8 +15,12 @@ let data;
 
 data = await fetchReleaseById(savedAccessToken, id);
 
-album = render(data);
-document.querySelector('#content').innerHTML = `${album}`;
+if (!data.error) {
+    album = render(data);
+    document.querySelector('#content').innerHTML = `${album}`;
+} else {
+    document.querySelector('#content').innerHTML = `<div class="subtitle">Ooops! Something went wrong...</div>`;
+}
 
 function render(item) {
     return `
@@ -45,12 +49,32 @@ function renderTracks(tracks) {
 };
 
 async function fetchReleaseById(savedAccessToken, id) {
-    const result = await fetch(`https://api.spotify.com/v1/albums/${id}`, {
-        method: "GET", headers: { Authorization: `Bearer ${savedAccessToken}` }
-    });
-
-    const data = await result.json();
-    return data
+    try {
+        const result = await fetch(`https://api.spotify.com/v1/albums/${id}`, {
+            method: "GET", headers: { Authorization: `Bearer ${savedAccessToken}` }
+        });
+    
+        if (!result.ok) {
+            switch (result.status) {
+                case 400:
+                    throw new Error("Bad Request: The request was invalid or cannot be served.");
+                case 401:
+                    throw new Error("Unauthorized: Invalid or expired access token.");
+                case 404:
+                    throw new Error("Not Found: The requested album does not exist.");
+                case 500:
+                    throw new Error("Server Error: Spotify API is currently unavailable.");
+                default:
+                    throw new Error(`Unexpected error: ${result.statusText} (${result.status})`);
+            }
+        }
+        const data = await result.json();
+        return data    
+        
+    } catch (error) {
+        console.error("Error fetching album:", error.message);
+        return { error: error.message };
+    }
 }
 
 function formatTimeDuration(ms) {

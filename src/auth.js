@@ -3,7 +3,6 @@ export const savedAccessToken = localStorage.getItem("access_token");
 
 // redirect the user to the Spotify authorization page
 export async function redirectToAuthCodeFlow(clientId) {
-    console.log(`redirectToAuthCodeFlow.......= `, )
     const verifier = generateCodeVerifier(128);
     // Convert digest to Base64 URL-safe string
     // Necessary for web-safe cryptographic data (e.g., OAuth PKCE)
@@ -91,8 +90,6 @@ export async function getAccessToken(clientId, code) {
 export function isTokenValid() {
     const token = localStorage.getItem("access_token");
     const expiry = localStorage.getItem("access_token_expiry");
-
-    console.log(`token===== = `, token)
 
     if (!token || token == "undefined" || expiry == "NaN" || !expiry || Number(Date.now()) > Number(expiry)) {
         localStorage.removeItem("access_token");
