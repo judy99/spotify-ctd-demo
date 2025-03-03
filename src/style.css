@@ -33,9 +33,9 @@ body {
 
 #nav > a
 {
-  color: black;
-    text-decoration: none;
-    font-size: 1.3rem;
+  color: darkgreen;
+  text-decoration: none;
+  font-size: 1.3rem;
 }
 
 #nav a:hover {
@@ -145,6 +145,12 @@ body {
   text-align: left;
 }
 
+.albumArtists ul > li {
+  color: darkgreen;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
 .albumContent {
   display: flex;
   justify-content: space-between;
@@ -165,4 +171,23 @@ body {
 
 .trackDuration {
   color: grey
+}
+
+@media screen and (max-width: 960px){
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .albumContent {
+    justify-content: start;
+    flex-direction: column;
+  }
+  .albumTracks {
+    padding-left: 0;
+}  
+}
+
+@media screen and (max-width: 680px){
+  .grid {
+    grid-template-columns: repeat(1, 1fr);
+  }  
 }
