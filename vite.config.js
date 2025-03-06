@@ -1,7 +1,12 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
-    target: 'es2022'
-  }
+    target: "es2022",
+  },
+  server: {
+    hmr: {
+      overlay: false,
+    },
+  },
 });
