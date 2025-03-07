@@ -1,4 +1,5 @@
 import { redirectToAuthCodeFlow, isTokenValid, clientId } from "./auth";
+// TODO:Refactor this code to use the fetchReleaseById function
 
 const savedAccessToken = localStorage.getItem("access_token");
 const verifierCode = localStorage.getItem("verifier");

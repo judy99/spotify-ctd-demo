@@ -60,8 +60,7 @@ async function generateCodeChallenge(codeVerifier) {
 // In order to make sure that the token exchange works
 export async function getAccessToken(clientId, code) {
   // load the verifier from local storage
-  //   const verifier = localStorage.getItem("verifier");
-  const verifier = sessionStorage.getItem("verifier");
+  const verifier = localStorage.getItem("verifier");
 
   const params = new URLSearchParams();
   params.append("client_id", clientId);
@@ -84,6 +83,8 @@ export async function getAccessToken(clientId, code) {
 
   const expirationTime = Date.now() + expires_in * 1000;
 
+  //   TODO:remove this code
+  // store the token and its expiration time in the local storage
   localStorage.setItem("access_token", access_token);
   localStorage.setItem("access_token_expiry", expirationTime.toString());
 
@@ -94,6 +95,7 @@ export function isTokenValid() {
   const token = localStorage.getItem("access_token");
   const expiry = localStorage.getItem("access_token_expiry");
 
+  // remove the token if it's not valid
   if (
     !token ||
     token == "undefined" ||
@@ -101,8 +103,8 @@ export function isTokenValid() {
     !expiry ||
     Number(Date.now()) > Number(expiry)
   ) {
-    // localStorage.removeItem("access_token");
-    // localStorage.removeItem("access_token_expiry");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("access_token_expiry");
     return false;
   }
   return true;

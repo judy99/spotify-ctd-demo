@@ -4,43 +4,46 @@ import {
   isTokenValid,
   clientId,
 } from "./auth";
-let authCode, params, albums, data;
 
-const savedAccessToken = localStorage.getItem("access_token");
-const verifierCode = localStorage.getItem("verifier");
+async function startApp() {
+  let authCode, params, albums, data;
 
-if (!isTokenValid() || !verifierCode) {
-  setTimeout(() => {
-    redirectToAuthCodeFlow(clientId);
-  }, 3000); // 3 seconds delay before redirecting
-  //   redirectToAuthCodeFlow(clientId);
+  // creates a new URLSearchParams object
+  // that provides methods to parse, access, and manipulate query parameters
+  const queryString = window.location.search;
+  params = new URLSearchParams(queryString);
+  // get code from query parameter to get the access token
+  authCode = params.get("code");
+
+  if (!isTokenValid()) {
+    // no valid token and no auth_code => redirect to the Spotify auth flow
+    if (!authCode) {
+      await redirectToAuthCodeFlow(clientId);
+    } else {
+      // no valid token and auth_code => go to the token exchange process and store the token in the local storage
+      await getAccessToken(clientId, authCode);
+    }
+  }
+
+  const savedAccessToken = localStorage.getItem("access_token");
+
+  // fetch new releases after we have a valid token
+  data = await fetchNewReleases(savedAccessToken);
+
+  if (!data.error) {
+    albums = render(data);
+    document.querySelector(
+      "#content"
+    ).innerHTML = `<div class="subtitle">Click on a card for details</div><div class="grid">${albums}</div>`;
+  } else {
+    document.querySelector(
+      "#content"
+    ).innerHTML = `<div class="subtitle">Ooops! Something went wrong...</div>`;
+  }
 }
 
-// creates a new URLSearchParams object
-// that provides methods to parse, access, and manipulate query parameters
-const queryString = window.location.search;
-params = new URLSearchParams(queryString);
-
-// get code from query parameter to get the access token
-authCode = params.get("code");
-
-// get the access token
-if (!savedAccessToken || savedAccessToken === "undefined") {
-  getAccessToken(clientId, authCode);
-}
-
-data = await fetchNewReleases(savedAccessToken);
-
-if (!data.error) {
-  albums = render(data);
-  document.querySelector(
-    "#content"
-  ).innerHTML = `<div class="subtitle">Click on a card for details</div><div class="grid">${albums}</div>`;
-} else {
-  document.querySelector(
-    "#content"
-  ).innerHTML = `<div class="subtitle">Ooops! Something went wrong...</div>`;
-}
+// start application
+startApp();
 
 async function fetchNewReleases(accessToken) {
   try {
