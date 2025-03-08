@@ -1,30 +1,41 @@
 import { redirectToAuthCodeFlow, isTokenValid, clientId } from "./auth";
-// TODO:Refactor this code to use the fetchReleaseById function
+import { errorHandling, showError, formatTimeDuration } from "./utils";
 
-const savedAccessToken = localStorage.getItem("access_token");
-const verifierCode = localStorage.getItem("verifier");
+// second page
+await detailsPage();
 
-if (!isTokenValid() || !verifierCode) {
-  redirectToAuthCodeFlow(clientId);
+async function detailsPage() {
+  const element = document.getElementById("container");
+  const savedAccessToken = localStorage.getItem("access_token");
+  const verifierCode = localStorage.getItem("verifier");
+  let album;
+  let data;
+
+  if (!isTokenValid() || !verifierCode) {
+    redirectToAuthCodeFlow(clientId);
+  }
+
+  // get id from url parameters to request the album details
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get("id");
+
+  // start showing the loader
+  element.classList.add("loader");
+  data = await fetchReleaseById(savedAccessToken, id);
+  // stop showing loader
+  element.classList.remove("loader");
+
+  // render the album details
+  if (!data.error) {
+    album = render(data);
+    document.querySelector("#content").innerHTML = `${album}`;
+  } else {
+    document.querySelector("#content").innerHTML = showError(data);
+  }
 }
 
-const urlParams = new URLSearchParams(window.location.search);
-const id = urlParams.get("id");
-
-let album;
-let data;
-
-data = await fetchReleaseById(savedAccessToken, id);
-
-if (!data.error) {
-  album = render(data);
-  document.querySelector("#content").innerHTML = `${album}`;
-} else {
-  document.querySelector(
-    "#content"
-  ).innerHTML = `<div class="subtitle">Ooops! Something went wrong...</div>`;
-}
-
+// **************************************************************
+// utility functions for rendering and fetching the album details
 function render(item) {
   return `
     <div class="album">
@@ -73,41 +84,13 @@ async function fetchReleaseById(savedAccessToken, id) {
       headers: { Authorization: `Bearer ${savedAccessToken}` },
     });
 
-    if (!result.ok) {
-      switch (result.status) {
-        case 400:
-          throw new Error(
-            "Bad Request: The request was invalid or cannot be served."
-          );
-        case 401:
-          throw new Error("Unauthorized: Invalid or expired access token.");
-        case 404:
-          throw new Error("Not Found: The requested album does not exist.");
-        case 500:
-          throw new Error(
-            "Server Error: Spotify API is currently unavailable."
-          );
-        default:
-          throw new Error(
-            `Unexpected error: ${result.statusText} (${result.status})`
-          );
-      }
-    }
+    errorHandling(result);
+
     const data = await result.json();
+
     return data;
   } catch (error) {
     console.error("Error fetching album:", error.message);
     return { error: error.message };
   }
-}
-
-function formatTimeDuration(ms) {
-  if (isNaN(ms) || ms < 0) {
-    return "00:00";
-  }
-  let minutes = Math.floor(ms / 60000);
-  let seconds = Math.floor((ms % 60000) / 1000);
-  let formattedSeconds = seconds.toString().padStart(2, "0");
-
-  return `${minutes}:${formattedSeconds}`;
 }
