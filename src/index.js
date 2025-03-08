@@ -28,7 +28,13 @@ async function indexPage() {
       await redirectToAuthCodeFlow(clientId);
     } else {
       // no valid token and auth_code => go to the token exchange process and store the token in the local storage
-      await getAccessToken(clientId, authCode);
+      const [access_token, expirationTime] = await getAccessToken(
+        clientId,
+        authCode
+      );
+      // store the token and its expiration time in the local storage
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("access_token_expiry", expirationTime.toString());
     }
     // hide loader after fetching data
     element.classList.remove("loader");

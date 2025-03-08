@@ -83,12 +83,7 @@ export async function getAccessToken(clientId, code) {
 
   const expirationTime = Date.now() + expires_in * 1000;
 
-  //   TODO:remove this code
-  // store the token and its expiration time in the local storage
-  localStorage.setItem("access_token", access_token);
-  localStorage.setItem("access_token_expiry", expirationTime.toString());
-
-  return access_token;
+  return [access_token, expirationTime];
 }
 
 export function isTokenValid() {
